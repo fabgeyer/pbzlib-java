@@ -22,6 +22,7 @@ Reading a `pbz` file:
 
 ```java
 import com.github.fabgeyer.pbzlib.io.PBZReader;
+import com.google.protobuf.DynamicMessage;
 
 public class Main {
 	public static void main(String[] args) throws Exception {

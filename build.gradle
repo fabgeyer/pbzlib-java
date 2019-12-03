@@ -1,0 +1,20 @@
+plugins {
+	id 'java'
+	id 'application'
+}
+
+repositories {
+    jcenter()
+}
+
+mainClassName = 'com.github.fabgeyer.pbzlib.io.Reader'
+
+dependencies {
+	compile 'com.google.protobuf:protobuf-java:3.7.0'
+}
+
+run {
+	if (project.hasProperty("appArgs")) {
+		args(appArgs.split(" "))
+	}
+}

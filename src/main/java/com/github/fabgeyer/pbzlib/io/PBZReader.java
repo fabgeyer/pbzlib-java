@@ -20,29 +20,27 @@ import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
 
 
 public class PBZReader {
-	public static final byte[] MAGIC = {0x41, 0x42};
-	public static final int T_FILE_DESCRIPTOR = 1;
-	public static final int T_DESCRIPTOR_NAME = 2;
-	public static final int T_MESSAGE = 3;
-
 	private boolean opened;
 	private final InputStream fileStream;
 	private final InputStream gzipStream;
 	private final Map<String, Descriptor> descriptorsByName = new HashMap<>();
 	private Descriptor nextDescriptor = null;
 
-	public Reader(String filename) throws IOException, DescriptorValidationException {
+	public PBZReader(String filename) throws IOException, DescriptorValidationException {
 		fileStream = new FileInputStream(filename);
 		gzipStream = new GZIPInputStream(fileStream);
 
 		// Parse magic header
 		byte[] header = new byte[2];
 		gzipStream.read(header, 0, 2);
-		if (!Arrays.equals(header, MAGIC)) {
+		if (!Arrays.equals(header, Constants.MAGIC)) {
 			throw new IOException("Invalid magic header");
 		}
 
 		int type = gzipStream.read();
+		if (type != Constants.T_FILE_DESCRIPTOR) {
+			throw new IOException("Invalid message type");
+		}
 		int firstByte = gzipStream.read();
 		int size = CodedInputStream.readRawVarint32(firstByte, gzipStream);
 
@@ -78,22 +76,33 @@ public class PBZReader {
 			byte[] buf = new byte[size];
 			gzipStream.read(buf, 0, size);
 
-			if (type == T_DESCRIPTOR_NAME) {
+			if (type == Constants.T_DESCRIPTOR_NAME) {
 				String name = new String(buf);
 				nextDescriptor = descriptorsByName.get(name);
 				if (nextDescriptor == null) {
 					throw new IOException("Descritor '" + name + "' not found");
 				}
 			}
-			else if (type == T_MESSAGE) {
+			else if (type == Constants.T_MESSAGE) {
 				DynamicMessage msg = DynamicMessage.parseFrom(nextDescriptor, buf);
 				return msg;
 			}
+			else {
+				throw new IOException("Invalid message type");
+			}
+		}
+
+		close();
+		return null;
+	}
+
+	public void close() throws IOException {
+		if (!opened) {
+			return;
 		}
 
 		gzipStream.close();
 		fileStream.close();
 		opened = false;
-		return null;
 	}
 }

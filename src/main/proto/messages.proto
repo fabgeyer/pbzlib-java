@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package tests;
+
+option java_multiple_files = true;
+option java_package = "com.github.fabgeyer.pbzlib.tests";
+option java_outer_classname = "Messages";
+
+message Header {
+	int32 version = 1;
+}
+
+message Object {
+	int32 id = 1;
+}

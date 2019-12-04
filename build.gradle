@@ -1,5 +1,6 @@
 plugins {
 	id 'java'
+    id 'com.google.protobuf' version '0.8.5'
 	id 'application'
 }
 
@@ -7,10 +8,16 @@ repositories {
     jcenter()
 }
 
-mainClassName = 'com.github.fabgeyer.pbzlib.io.Reader'
+mainClassName = 'com.github.fabgeyer.pbzlib.tests.PBZTests'
 
 dependencies {
 	compile 'com.google.protobuf:protobuf-java:3.7.0'
+}
+
+protobuf {
+	protoc {
+		artifact = 'com.google.protobuf:protoc:3.7.0'
+	}
 }
 
 run {

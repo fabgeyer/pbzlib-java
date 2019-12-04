@@ -4,8 +4,6 @@ This library is used for simplifying the serialization and deserialization of [p
 The main use-case is to save and read a large collection of objects of the same type.
 Each file contains a header with the description of the protocol buffer, meaning that no compilation of `.proto` description file is required before reading a `pbz` file.
 
-**WARNING:** This library is currently in alpha state and can only read `pbz` files.
-
 
 ## Installation and compilation
 
@@ -26,7 +24,7 @@ import com.google.protobuf.DynamicMessage;
 
 public class Main {
 	public static void main(String[] args) throws Exception {
-		Reader rdr = new PBZReader("file.pbz");
+		PBZReader rdr = new PBZReader("file.pbz");
 		while (true) {
 			DynamicMessage msg = rdr.nextMessage();
 			if (msg == null) {
@@ -34,6 +32,23 @@ public class Main {
 			}
 			System.out.println(msg);
 		}
+	}
+}
+```
+
+Writing a `pbz` file:
+
+```java
+import com.github.fabgeyer.pbzlib.io.PBZWriter;
+import your.protobuf.MainClass;
+import your.protobuf.Message;
+
+public class Main {
+	public static void main(String[] args) throws Exception {
+		PBZReader wrtr = new PBZWriter("file.pbz", MainClass.getDescriptor());
+		Message msg = Message.newBuilder.setField(value).build();
+		wrtr.add(msg);
+		wrtr.close();
 	}
 }
 ```

@@ -11,6 +11,7 @@ import java.util.zip.GZIPInputStream;
 
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Parser;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FileDescriptor;
@@ -26,6 +27,7 @@ public class PBZReader {
 	private final CodedInputStream ciStream;
 	private final Map<String, Descriptor> descriptorsByName = new HashMap<>();
 	private Descriptor nextDescriptor = null;
+	private String nextDescriptorName;
 
 	public PBZReader(String filename) throws IOException, DescriptorValidationException {
 		fileStream = new FileInputStream(filename);
@@ -86,15 +88,44 @@ public class PBZReader {
 			byte[] buf = ciStream.readRawBytes(size);
 
 			if (type == Constants.T_DESCRIPTOR_NAME) {
-				String name = new String(buf);
-				nextDescriptor = descriptorsByName.get(name);
+				nextDescriptorName = new String(buf);
+				nextDescriptor = descriptorsByName.get(nextDescriptorName);
 				if (nextDescriptor == null) {
-					throw new IOException("Descritor '" + name + "' not found");
+					throw new IOException("Descritor '" + nextDescriptorName + "' not found");
 				}
 			}
 			else if (type == Constants.T_MESSAGE) {
 				DynamicMessage msg = DynamicMessage.parseFrom(nextDescriptor, buf);
 				return msg;
+			}
+			else {
+				throw new IOException("Invalid message type: " + type);
+			}
+		}
+
+		close();
+		return null;
+	}
+
+	public <T> T nextMessage(Parser<T> parser) throws IOException {
+		if (!opened) {
+			return null;
+		}
+
+		while (true) {
+			if (ciStream.isAtEnd()) {
+				break;
+			}
+
+			int type = ciStream.readRawByte();
+			int size = ciStream.readRawVarint32();
+			byte[] buf = ciStream.readRawBytes(size);
+
+			if (type == Constants.T_DESCRIPTOR_NAME) {
+				nextDescriptorName = new String(buf);
+			}
+			else if (type == Constants.T_MESSAGE) {
+				return parser.parseFrom(buf);
 			}
 			else {
 				throw new IOException("Invalid message type: " + type);

@@ -1,6 +1,6 @@
 plugins {
 	id 'java'
-    id 'com.google.protobuf' version '0.8.5'
+    id 'com.google.protobuf' version '0.8.8'
 	id 'application'
 }
 
@@ -11,12 +11,12 @@ repositories {
 mainClassName = 'com.github.fabgeyer.pbzlib.tests.PBZTests'
 
 dependencies {
-	compile 'com.google.protobuf:protobuf-java:3.7.0'
+	compile 'com.google.protobuf:protobuf-java:3.11.0'
 }
 
 protobuf {
 	protoc {
-		artifact = 'com.google.protobuf:protoc:3.7.0'
+		artifact = 'com.google.protobuf:protoc:3.11.0'
 	}
 }
 

@@ -23,6 +23,7 @@ public class PBZReader {
 	private boolean opened;
 	private final InputStream fileStream;
 	private final InputStream gzipStream;
+	private final CodedInputStream ciStream;
 	private final Map<String, Descriptor> descriptorsByName = new HashMap<>();
 	private Descriptor nextDescriptor = null;
 
@@ -36,14 +37,12 @@ public class PBZReader {
 		if (!Arrays.equals(header, Constants.MAGIC)) {
 			throw new IOException("Invalid magic header");
 		}
+		ciStream = CodedInputStream.newInstance(gzipStream);
 
 		while (true) {
-			int type = gzipStream.read();
-			int firstByte = gzipStream.read();
-			int size = CodedInputStream.readRawVarint32(firstByte, gzipStream);
-
-			byte[] buf = new byte[size];
-			gzipStream.read(buf, 0, size);
+			int type = ciStream.readRawByte();
+			int size = ciStream.readRawVarint32();
+			byte[] buf = ciStream.readRawBytes(size);
 
 			if (type == Constants.T_PROTOBUF_VERSION) {
 				// Ignore protobuf version
@@ -54,13 +53,17 @@ public class PBZReader {
 				throw new IOException("Invalid message type");
 			}
 
-			FileDescriptor[] deps = new FileDescriptor[0];
-			FileDescriptorSet fs = FileDescriptorSet.parseFrom(buf);
-			for (FileDescriptorProto fdp : fs.getFileList()) {
-				FileDescriptor fd = FileDescriptor.buildFrom(fdp, deps);
-				for (Descriptor descr : fd.getMessageTypes()) {
-					descriptorsByName.put(descr.getFullName(), descr);
+			try {
+				FileDescriptor[] deps = new FileDescriptor[0];
+				FileDescriptorSet fs = FileDescriptorSet.parseFrom(buf);
+				for (FileDescriptorProto fdp : fs.getFileList()) {
+					FileDescriptor fd = FileDescriptor.buildFrom(fdp, deps);
+					for (Descriptor descr : fd.getMessageTypes()) {
+						descriptorsByName.put(descr.getFullName(), descr);
+					}
 				}
+			} catch (Exception e) {
+				throw new IOException("Could not parse PBZ descriptor file!");
 			}
 			break;
 		}
@@ -74,16 +77,13 @@ public class PBZReader {
 		}
 
 		while (true) {
-			if (gzipStream.available() == 0) {
+			if (ciStream.isAtEnd()) {
 				break;
 			}
 
-			int type = gzipStream.read();
-			int firstByte = gzipStream.read();
-			int size = CodedInputStream.readRawVarint32(firstByte, gzipStream);
-
-			byte[] buf = new byte[size];
-			gzipStream.read(buf, 0, size);
+			int type = ciStream.readRawByte();
+			int size = ciStream.readRawVarint32();
+			byte[] buf = ciStream.readRawBytes(size);
 
 			if (type == Constants.T_DESCRIPTOR_NAME) {
 				String name = new String(buf);
@@ -97,7 +97,7 @@ public class PBZReader {
 				return msg;
 			}
 			else {
-				throw new IOException("Invalid message type");
+				throw new IOException("Invalid message type: " + type);
 			}
 		}
 

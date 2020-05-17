@@ -37,23 +37,32 @@ public class PBZReader {
 			throw new IOException("Invalid magic header");
 		}
 
-		int type = gzipStream.read();
-		if (type != Constants.T_FILE_DESCRIPTOR) {
-			throw new IOException("Invalid message type");
-		}
-		int firstByte = gzipStream.read();
-		int size = CodedInputStream.readRawVarint32(firstByte, gzipStream);
+		while (true) {
+			int type = gzipStream.read();
+			int firstByte = gzipStream.read();
+			int size = CodedInputStream.readRawVarint32(firstByte, gzipStream);
 
-		byte[] buf = new byte[size];
-		gzipStream.read(buf, 0, size);
+			byte[] buf = new byte[size];
+			gzipStream.read(buf, 0, size);
 
-		FileDescriptor[] deps = new FileDescriptor[0];
-		FileDescriptorSet fs = FileDescriptorSet.parseFrom(buf);
-		for (FileDescriptorProto fdp : fs.getFileList()) {
-			FileDescriptor fd = FileDescriptor.buildFrom(fdp, deps);
-			for (Descriptor descr : fd.getMessageTypes()) {
-				descriptorsByName.put(descr.getFullName(), descr);
+			if (type == Constants.T_PROTOBUF_VERSION) {
+				// Ignore protobuf version
+				continue;
 			}
+
+			if (type != Constants.T_FILE_DESCRIPTOR) {
+				throw new IOException("Invalid message type");
+			}
+
+			FileDescriptor[] deps = new FileDescriptor[0];
+			FileDescriptorSet fs = FileDescriptorSet.parseFrom(buf);
+			for (FileDescriptorProto fdp : fs.getFileList()) {
+				FileDescriptor fd = FileDescriptor.buildFrom(fdp, deps);
+				for (Descriptor descr : fd.getMessageTypes()) {
+					descriptorsByName.put(descr.getFullName(), descr);
+				}
+			}
+			break;
 		}
 	
 		opened = true;

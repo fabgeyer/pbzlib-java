@@ -6,4 +6,5 @@ public class Constants {
 	public static final int T_FILE_DESCRIPTOR = 1;
 	public static final int T_DESCRIPTOR_NAME = 2;
 	public static final int T_MESSAGE = 3;
+	public static final int T_PROTOBUF_VERSION = 4;
 }

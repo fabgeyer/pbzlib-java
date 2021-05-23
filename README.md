@@ -68,7 +68,7 @@ import your.protobuf.Message;
 
 public class Main {
 	public static void main(String[] args) throws Exception {
-		PBZReader wrtr = new PBZWriter("file.pbz", MainClass.getDescriptor());
+		PBZWriter wrtr = new PBZWriter("file.pbz", MainClass.getDescriptor());
 		Message msg = Message.newBuilder.setField(value).build();
 		wrtr.add(msg);
 		wrtr.close();

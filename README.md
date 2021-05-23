@@ -15,6 +15,7 @@ $ gradle build
 
 
 ## Example
+### Reading
 
 Reading a `pbz` file:
 
@@ -35,6 +36,28 @@ public class Main {
 	}
 }
 ```
+
+Reading a `pbz` file with a given target class:
+
+```java
+import your.protobuf.YourProtobufClass;
+import com.github.fabgeyer.pbzlib.io.PBZReader;
+
+public class Main {
+	public static void main(String[] args) throws Exception {
+		PBZReader rdr = new PBZReader("file.pbz");
+		while (true) {
+			YourProtobufClass obj = rdr.nextMessage(YourProtobufClass.parser());
+			if (obj == null) {
+				break;
+			}
+			System.out.println(obj);
+		}
+	}
+}
+```
+
+### Writing
 
 Writing a `pbz` file:
 
